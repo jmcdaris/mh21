@@ -162,25 +162,27 @@ MaximDS3231 ds3231(1);
 
 
 // ==========================================================================
-//  Decagon ES2 Conductivity and Temperature Sensor
+//  Meter Hydros 21 Conductivity, Temperature, and Depth Sensor
 // ==========================================================================
-/** Start [es2] */
-#include <sensors/DecagonES2.h>
+/** Start [hydros21] */
+#include <sensors/DecagonCTD.h>
 
-const char*   ES2SDI12address = "3";      // The SDI-12 Address of the ES2
-const int8_t  ES2Power = sensorPowerPin;  // Power pin (-1 if unconnected)
-const int8_t  ES2Data  = 7;               // The SDI12 data pin
-const uint8_t ES2NumberReadings = 5;
+const char*   CTDSDI12address   = "1";    // The SDI-12 Address of the CTD
+const uint8_t CTDNumberReadings = 6;      // The number of readings to average
+const int8_t  CTDPower = sensorPowerPin;  // Power pin (-1 if unconnected)
+const int8_t  CTDData  = 7;               // The SDI12 data pin
 
-// Create a Decagon ES2 sensor object
-DecagonES2 es2(*ES2SDI12address, ES2Power, ES2Data, ES2NumberReadings);
+// Create a Decagon CTD sensor object
+DecagonCTD ctd(*CTDSDI12address, CTDPower, CTDData, CTDNumberReadings);
 
-// Create conductivity and temperature variable pointers for the ES2
-Variable* es2Cond = new DecagonES2_Cond(&es2,
+// Create conductivity, temperature, and depth variable pointers for the CTD
+Variable* ctdCond = new DecagonCTD_Cond(&ctd,
                                         "12345678-abcd-1234-ef00-1234567890ab");
-Variable* es2Temp = new DecagonES2_Temp(&es2,
+Variable* ctdTemp = new DecagonCTD_Temp(&ctd,
                                         "12345678-abcd-1234-ef00-1234567890ab");
-/** End [es2] */
+Variable* ctdDepth =
+    new DecagonCTD_Depth(&ctd, "12345678-abcd-1234-ef00-1234567890ab");
+/** End [hydros21] */
 
 // // ==========================================================================
 // //    Maxbotix HRXL Ultrasonic Range Finder
@@ -274,8 +276,9 @@ Variable* variableList[] = {
     // new YosemitechY520_Temp(&y520, "9e932e27-a3d6-499d-8106-bcd42b6d9085"),
     // new YosemitechY520_Cond(&y520, "09f14e53-b1ac-4aa5-a993-d3f0e8366250"),
     new ProcessorStats_Battery(&mcuBoard, "7a7e70d0-8b6d-44e8-a97f-dabb61c868a7"),
-    new DecagonES2_Cond(&es2,"12345678-abcd-1234-ef00-1234567890ab"),
-    new DecagonES2_Temp(&es2,"12345678-abcd-1234-ef00-1234567890ab"),
+    new DecagonCTD_Cond(&ctd, "12345678-abcd-1234-ef00-1234567890ab"),
+    new DecagonCTD_Temp(&ctd,  "12345678-abcd-1234-ef00-1234567890ab"),
+    new DecagonCTD_Depth(&ctd, "12345678-abcd-1234-ef00-1234567890ab"),
     // new MaximDS3231_Temp(&ds3231, "12345678-abcd-1234-ef00-1234567890ab"),
     // new Modem_RSSI(&modem, "12345678-abcd-1234-ef00-1234567890ab"),
     // new Modem_SignalPercent(&modem, "12345678-abcd-1234-ef00-1234567890ab"),
