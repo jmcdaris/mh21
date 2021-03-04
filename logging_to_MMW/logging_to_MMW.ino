@@ -179,31 +179,27 @@ MaximDS3231 ds3231(1);
 //  Meter Hydros 21 Conductivity, Temperature, and Depth Sensor
 // ==========================================================================
 /** Start [hydros21] */
-/** QWTA Well () sensor **/
 #include <sensors/DecagonCTD.h>
 
-const char*   CTDSDI12address1   = "1";    // The SDI-12 Address of the CTD
+const char*   CTDSDI12address_1   = "1";    // The SDI-12 Address of the first CTD
+// const char*   CTDSDI12address_10   = "10";    // The SDI-12 Address of the second CTD
 const uint8_t CTDNumberReadings = 6;      // The number of readings to average
 const int8_t  CTDPower = sensorPowerPin;  // Power pin (-1 if unconnected)
-const int8_t  CTDData  = 7;               // The SDI12 data pin
+const int8_t  CTDData_1  = 7;               // The SDI12 data pin
+// const int8_t  CTDData_10  = 11;               // The SDI12 data pin
 
 // Create a Decagon CTD sensor object
-DecagonCTD ctd_1(*CTDSDI12address1, CTDPower, CTDData, CTDNumberReadings);
-
-/** PLAT Well () sensor **/
-#include <sensors/DecagonCTD.h>
-
-const char*   CTDSDI12address10   = "10";    // The SDI-12 Address of the CTD
-const uint8_t CTDNumberReadings = 6;      // The number of readings to average
-const int8_t  CTDPower = sensorPowerPin;  // Power pin (-1 if unconnected)
-const int8_t  CTDData  = 11;               // The SDI12 data pin
-
-// Create a Decagon CTD sensor object
-DecagonCTD ctd_10(*CTDSDI12address10, CTDPower, CTDData, CTDNumberReadings);
+DecagonCTD ctd_1(*CTDSDI12address_1, CTDPower, CTDData_1, CTDNumberReadings);
+// DecagonCTD ctd_10(*CTDSDI12address_10, CTDPower, CTDData_10, CTDNumberReadings);
 
 // Create conductivity, temperature, and depth variable pointers for the CTD
-
-/** End [hydros21] */
+// Variable* ctdCond_1 = new DecagonCTD_Cond(&ctd_1,"8223ee2b-69dc-4b8d-ba0a-618a0c1be623");
+// Variable* ctdTemp_1 = new DecagonCTD_Temp(&ctd_1, "2fdcdd5e-37c0-4520-ac7e-dcd00043e7e7");
+// Variable* ctdDepth_1 = new DecagonCTD_Depth(&ctd_1, "2c01b840-3247-4503-a594-88cfd0780b8d");
+// Variable* ctdCond_10 = new DecagonCTD_Cond(&ctd_10, "cab179bc-0e05-4bae-a2db-0a9bd20fb8e1");
+// Variable* ctdTemp_10 = new DecagonCTD_Temp(&ctd_10, "9441ff2b-a5cd-4e02-9e55-6ee5d8248eec");
+// Variable* ctdDepth_10 = new DecagonCTD_Depth(&ctd_10, "7d6b7963-decb-43c9-b098-21401e4ccae5");
+        /** End [hydros21] */
 
 // ==========================================================================
 //  Creating the Variable Array[s] and Filling with Variable Objects
@@ -211,9 +207,15 @@ DecagonCTD ctd_10(*CTDSDI12address10, CTDPower, CTDData, CTDNumberReadings);
 /** Start [variable_arrays] */
 Variable* variableList[] = {
     new ProcessorStats_SampleNumber(&mcuBoard, "12345678-abcd-1234-ef00-1234567890ab"),
-    new DecagonCTD_Cond(&ctd, "12345678-abcd-1234-ef00-1234567890ab"),
-    new DecagonCTD_Temp(&ctd, "12345678-abcd-1234-ef00-1234567890ab"),
-    new DecagonCTD_Depth(&ctd, "12345678-abcd-1234-ef00-1234567890ab"),
+    new DecagonCTD_Cond(&ctd_1,"8223ee2b-69dc-4b8d-ba0a-618a0c1be623"),
+    new DecagonCTD_Temp(&ctd_1, "2fdcdd5e-37c0-4520-ac7e-dcd00043e7e7"),
+    new DecagonCTD_Depth(&ctd_1, "2c01b840-3247-4503-a594-88cfd0780b8d"),
+    // new DecagonCTD_Cond(&ctd_10, "cab179bc-0e05-4bae-a2db-0a9bd20fb8e1"),
+    // new DecagonCTD_Temp(&ctd_10, "9441ff2b-a5cd-4e02-9e55-6ee5d8248eec"),
+    // new DecagonCTD_Depth(&ctd_10, "7d6b7963-decb-43c9-b098-21401e4ccae5"),
+    // new DecagonCTD_Cond(&ctd, "12345678-abcd-1234-ef00-1234567890ab"),
+    // new DecagonCTD_Temp(&ctd, "12345678-abcd-1234-ef00-1234567890ab"),
+    // new DecagonCTD_Depth(&ctd, "12345678-abcd-1234-ef00-1234567890ab"),
     // new BoschBME280_Temp(&bme280, "12345678-abcd-1234-ef00-1234567890ab"),
     // new BoschBME280_Humidity(&bme280, "12345678-abcd-1234-ef00-1234567890ab"),
     // new BoschBME280_Pressure(&bme280, "12345678-abcd-1234-ef00-1234567890ab"),
