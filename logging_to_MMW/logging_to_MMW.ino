@@ -56,7 +56,7 @@
 // The name of this program file
 const char* sketchName = "logging_to MMW.ino";
 // Logger ID, also becomes the prefix for the name of the data file on SD card
-const char* LoggerID = "XXXXX";
+const char* LoggerID = "20351";
 // How frequently (in minutes) to log data
 const uint8_t loggingInterval = 5;
 // Your logger's timezone.
@@ -65,11 +65,11 @@ const int8_t timeZone = -6;  // Central Standard Time
 
 // Set the input and output pins for the logger
 // NOTE:  Use -1 for pins that do not apply
-const long   serialBaud = 115200;  // Baud rate for debugging
-const int8_t greenLED   = 8;       // Pin for the green LED
-const int8_t redLED     = 9;       // Pin for the red LED
-const int8_t buttonPin  = 21;      // Pin for debugging mode (ie, button pin)
-const int8_t wakePin    = A7;      // MCU interrupt/alarm pin to wake from sleep
+const int32_t serialBaud = 115200;  // Baud rate for debugging
+const int8_t  greenLED   = 8;       // Pin for the green LED
+const int8_t  redLED     = 9;       // Pin for the red LED
+const int8_t  buttonPin  = 21;      // Pin for debugging mode (ie, button pin)
+const int8_t  wakePin    = A7;  // MCU interrupt/alarm pin to wake from sleep
 // Set the wake pin to -1 if you do not want the main processor to sleep.
 // In a SAMD system where you are using the built-in rtc, set wakePin to 1
 const int8_t sdCardPwrPin   = -1;  // MCU SD card power pin
@@ -90,17 +90,17 @@ const int8_t sensorPowerPin = 22;  // MCU pin controlling main sensor power
 
 // Create a reference to the serial port for the modem
 HardwareSerial& modemSerial = Serial1;  // Use hardware serial if possible
-const long      modemBaud   = 9600;     // All XBee's use 9600 by default
+const int32_t   modemBaud   = 9600;     // All XBee's use 9600 by default
 
 // Modem Pins - Describe the physical pin connection of your modem to your board
 // NOTE:  Use -1 for pins that do not apply
-const int8_t modemVccPin     = -2;      // MCU pin controlling modem power
-const int8_t modemStatusPin  = 19;      // MCU pin used to read modem status
-const bool   useCTSforStatus = false;   // Flag to use the XBee CTS pin for status
-const int8_t modemResetPin   = 20;      // MCU pin connected to modem reset pin
-const int8_t modemSleepRqPin = 23;      // MCU pin for modem sleep/wake request
-const int8_t modemLEDPin     = redLED;  // MCU pin connected an LED to show modem
-                                        // status (-1 if unconnected)
+const int8_t modemVccPin    = -2;     // MCU pin controlling modem power
+const int8_t modemStatusPin = 19;     // MCU pin used to read modem status
+const bool useCTSforStatus  = false;  // Flag to use the XBee CTS pin for status
+const int8_t modemResetPin  = 20;     // MCU pin connected to modem reset pin
+const int8_t modemSleepRqPin = 23;    // MCU pin for modem sleep/wake request
+const int8_t modemLEDPin = redLED;    // MCU pin connected an LED to show modem
+                                      // status (-1 if unconnected)
 
 // Network connection information
 const char* apn = "hologram";  // The APN for the gprs connection
@@ -108,8 +108,8 @@ const char* apn = "hologram";  // The APN for the gprs connection
 // NOTE:  If possible, use the `STATUS/SLEEP_not` (XBee pin 13) for status, but
 // the `CTS` pin can also be used if necessary
 DigiXBeeCellularTransparent modemXBCT(&modemSerial, modemVccPin, modemStatusPin,
-                                      useCTSforStatus, modemResetPin, modemSleepRqPin,
-                                      apn);
+                                      useCTSforStatus, modemResetPin,
+                                      modemSleepRqPin, apn);
 // Create an extra reference to the modem by a generic name
 DigiXBeeCellularTransparent modem = modemXBCT;
 /** End [xbee_cell_transparent] */
@@ -137,91 +137,51 @@ ProcessorStats mcuBoard(mcuBoardVersion);
 MaximDS3231 ds3231(1);
 /** End [ds3231] */
 
-
-// ==========================================================================
-//  Bosch BME280 Environmental Sensor
-// ==========================================================================
-/** Start [bme280] */
-// #include <sensors/BoschBME280.h>
-//
-// const int8_t I2CPower    = sensorPowerPin;  // Power pin (-1 if unconnected)
-// uint8_t      BMEi2c_addr = 0x76;
-// // The BME280 can be addressed either as 0x77 (Adafruit default) or 0x76 (Grove
-// // default) Either can be physically mofidied for the other address
-//
-// // Create a Bosch BME280 sensor object
-// BoschBME280 bme280(I2CPower, BMEi2c_addr);
-/** End [bme280] */
-
-
-// ==========================================================================
-//  Maxim DS18 One Wire Temperature Sensor
-// ==========================================================================
-/** Start [ds18] */
-// #include <sensors/MaximDS18.h>
-//
-// // OneWire Address [array of 8 hex characters]
-// // If only using a single sensor on the OneWire bus, you may omit the address
-// // DeviceAddress OneWireAddress1 = {0x28, 0xFF, 0xBD, 0xBA, 0x81, 0x16, 0x03,
-// // 0x0C};
-// const int8_t OneWirePower = sensorPowerPin;  // Power pin (-1 if unconnected)
-// const int8_t OneWireBus   = 6;               // OneWire Bus Pin (-1 if unconnected)
-//
-// // Create a Maxim DS18 sensor objects (use this form for a known address)
-// // MaximDS18 ds18(OneWireAddress1, OneWirePower, OneWireBus);
-//
-// // Create a Maxim DS18 sensor object (use this form for a single sensor on bus
-// // with an unknown address)
-// MaximDS18 ds18(OneWirePower, OneWireBus);
-/** End [ds18] */
-
 // ==========================================================================
 //  Meter Hydros 21 Conductivity, Temperature, and Depth Sensor
 // ==========================================================================
 /** Start [hydros21] */
 #include <sensors/DecagonCTD.h>
 
-const char*   CTDSDI12address_1   = "1";    // The SDI-12 Address of the first CTD
-// const char*   CTDSDI12address_10   = "10";    // The SDI-12 Address of the second CTD
+const char*   CTDSDI12address_1   = "1";    // The SDI-12 Address of the QWTA CTD
+const char*   CTDSDI12address_7   = "7";    // The SDI-12 Address of the OPVL CTD
 const uint8_t CTDNumberReadings = 6;      // The number of readings to average
 const int8_t  CTDPower = sensorPowerPin;  // Power pin (-1 if unconnected)
 const int8_t  CTDData_1  = 7;               // The SDI12 data pin
-// const int8_t  CTDData_10  = 11;               // The SDI12 data pin
+const int8_t  CTDData_7  = 11;               // The SDI12 data pin
+
+// const char*   CTDSDI12address   = "1";    // The SDI-12 Address of the CTD
+// const uint8_t CTDNumberReadings = 6;      // The number of readings to average
+// const int8_t  CTDPower = sensorPowerPin;  // Power pin (-1 if unconnected)
+// const int8_t  CTDData  = 7;               // The SDI12 data pin
 
 // Create a Decagon CTD sensor object
+// DecagonCTD ctd(*CTDSDI12address, CTDPower, CTDData, CTDNumberReadings);
 DecagonCTD ctd_1(*CTDSDI12address_1, CTDPower, CTDData_1, CTDNumberReadings);
-// DecagonCTD ctd_10(*CTDSDI12address_10, CTDPower, CTDData_10, CTDNumberReadings);
+DecagonCTD ctd_7(*CTDSDI12address_7, CTDPower, CTDData_7, CTDNumberReadings);
 
 // Create conductivity, temperature, and depth variable pointers for the CTD
-// Variable* ctdCond_1 = new DecagonCTD_Cond(&ctd_1,"8223ee2b-69dc-4b8d-ba0a-618a0c1be623");
-// Variable* ctdTemp_1 = new DecagonCTD_Temp(&ctd_1, "2fdcdd5e-37c0-4520-ac7e-dcd00043e7e7");
-// Variable* ctdDepth_1 = new DecagonCTD_Depth(&ctd_1, "2c01b840-3247-4503-a594-88cfd0780b8d");
-// Variable* ctdCond_10 = new DecagonCTD_Cond(&ctd_10, "cab179bc-0e05-4bae-a2db-0a9bd20fb8e1");
-// Variable* ctdTemp_10 = new DecagonCTD_Temp(&ctd_10, "9441ff2b-a5cd-4e02-9e55-6ee5d8248eec");
-// Variable* ctdDepth_10 = new DecagonCTD_Depth(&ctd_10, "7d6b7963-decb-43c9-b098-21401e4ccae5");
-        /** End [hydros21] */
+
+/** End [hydros21] */
 
 // ==========================================================================
 //  Creating the Variable Array[s] and Filling with Variable Objects
 // ==========================================================================
 /** Start [variable_arrays] */
 Variable* variableList[] = {
-    new ProcessorStats_SampleNumber(&mcuBoard, "12345678-abcd-1234-ef00-1234567890ab"),
+    new ProcessorStats_SampleNumber(&mcuBoard,
+                                    "12345678-abcd-1234-ef00-1234567890ab"),
+    // new DecagonCTD_Depth(&ctd, "12345678-abcd-1234-ef00-1234567890ab"),
+    // new DecagonCTD_Temp(&ctd, "12345678-abcd-1234-ef00-1234567890ab"),
+    // new DecagonCTD_Cond(&ctd, "12345678-abcd-1234-ef00-1234567890ab"),
     new DecagonCTD_Cond(&ctd_1,"8223ee2b-69dc-4b8d-ba0a-618a0c1be623"),
     new DecagonCTD_Temp(&ctd_1, "2fdcdd5e-37c0-4520-ac7e-dcd00043e7e7"),
     new DecagonCTD_Depth(&ctd_1, "2c01b840-3247-4503-a594-88cfd0780b8d"),
-    // new DecagonCTD_Cond(&ctd_10, "cab179bc-0e05-4bae-a2db-0a9bd20fb8e1"),
-    // new DecagonCTD_Temp(&ctd_10, "9441ff2b-a5cd-4e02-9e55-6ee5d8248eec"),
-    // new DecagonCTD_Depth(&ctd_10, "7d6b7963-decb-43c9-b098-21401e4ccae5"),
-    // new DecagonCTD_Cond(&ctd, "12345678-abcd-1234-ef00-1234567890ab"),
-    // new DecagonCTD_Temp(&ctd, "12345678-abcd-1234-ef00-1234567890ab"),
-    // new DecagonCTD_Depth(&ctd, "12345678-abcd-1234-ef00-1234567890ab"),
-    // new BoschBME280_Temp(&bme280, "12345678-abcd-1234-ef00-1234567890ab"),
-    // new BoschBME280_Humidity(&bme280, "12345678-abcd-1234-ef00-1234567890ab"),
-    // new BoschBME280_Pressure(&bme280, "12345678-abcd-1234-ef00-1234567890ab"),
-    // new BoschBME280_Altitude(&bme280, "12345678-abcd-1234-ef00-1234567890ab"),
-    // new MaximDS18_Temp(&ds18, "12345678-abcd-1234-ef00-1234567890ab"),
-    new ProcessorStats_Battery(&mcuBoard, "12345678-abcd-1234-ef00-1234567890ab"),
+    new DecagonCTD_Cond(&ctd_7, "cab179bc-0e05-4bae-a2db-0a9bd20fb8e1"),
+    new DecagonCTD_Temp(&ctd_7, "9441ff2b-a5cd-4e02-9e55-6ee5d8248eec"),
+    new DecagonCTD_Depth(&ctd_7, "7d6b7963-decb-43c9-b098-21401e4ccae5"),
+    new ProcessorStats_Battery(&mcuBoard,
+                               "12345678-abcd-1234-ef00-1234567890ab"),
     new MaximDS3231_Temp(&ds3231, "12345678-abcd-1234-ef00-1234567890ab"),
     new Modem_RSSI(&modem, "12345678-abcd-1234-ef00-1234567890ab"),
     new Modem_SignalPercent(&modem, "12345678-abcd-1234-ef00-1234567890ab"),
@@ -259,8 +219,8 @@ const char* samplingFeature =
 
 // Create a data publisher for the Monitor My Watershed/EnviroDIY POST endpoint
 #include <publishers/EnviroDIYPublisher.h>
-EnviroDIYPublisher EnviroDIYPOST(dataLogger, &modem.gsmClient, registrationToken,
-                                 samplingFeature);
+EnviroDIYPublisher EnviroDIYPOST(dataLogger, &modem.gsmClient,
+                                 registrationToken, samplingFeature);
 /** End [publishers] */
 
 
@@ -320,7 +280,8 @@ void setup() {
 
 // Allow interrupts for software serial
 #if defined SoftwareSerial_ExtInts_h
-    enableInterrupt(softSerialRx, SoftwareSerial_ExtInts::handle_interrupt, CHANGE);
+    enableInterrupt(softSerialRx, SoftwareSerial_ExtInts::handle_interrupt,
+                    CHANGE);
 #endif
 #if defined NeoSWSerial_h
     enableInterrupt(neoSSerial1Rx, neoSSerial1ISR, CHANGE);
@@ -346,7 +307,8 @@ void setup() {
     // Attach the modem and information pins to the logger
     dataLogger.attachModem(modem);
     modem.setModemLED(modemLEDPin);
-    dataLogger.setLoggerPins(wakePin, sdCardSSPin, sdCardPwrPin, buttonPin, greenLED);
+    dataLogger.setLoggerPins(wakePin, sdCardSSPin, sdCardPwrPin, buttonPin,
+                             greenLED);
 
     // Begin the logger
     dataLogger.begin();
@@ -372,7 +334,8 @@ void setup() {
     // the sensor setup we'll skip this too.
     if (getBatteryVoltage() > 3.4) {
         Serial.println(F("Setting up file on SD card"));
-        dataLogger.turnOnSDcard(true);  // true = wait for card to settle after power up
+        dataLogger.turnOnSDcard(
+            true);  // true = wait for card to settle after power up
         dataLogger.createLogFile(true);  // true = write a new header
         dataLogger.turnOffSDcard(
             true);  // true = wait for internal housekeeping after write
