@@ -54,7 +54,7 @@
 // ==========================================================================
 /** Start [logging_options] */
 // The name of this program file
-const char* sketchName = "logging_to MMW.ino";
+const char* sketchName = "logging_to_MMW_calib.ino";
 // Logger ID, also becomes the prefix for the name of the data file on SD card
 const char* LoggerID = "20351";
 // How frequently (in minutes) to log data
@@ -177,11 +177,11 @@ Variable *cond2 = new DecagonCTD_Cond(&ctd_7, "cab179bc-0e05-4bae-a2db-0a9bd20fb
 // You can use any named variable pointers to access values by way of variable->getValue()
 
 // Create the function to calculate water level / gage height variable
-float calibrateConductivity1(void)
+float calibrateConductivity1(void) //QWTA sensor
 {
     float calibConductivity1 = -9999;  // Always safest to start with a bad value
-    const float ConductivityK1 = 1.029586;   // slope from conductivity calibration spreadsheet
-    const float ConductivityB1 = -0.015092;   // intercept from conductivity calibration spreadsheet (mS/cm)
+    const float ConductivityK1 = 0.9566;   // slope from conductivity calibration spreadsheet
+    const float ConductivityB1 = -2.048;   // intercept from conductivity calibration spreadsheet (mS/cm)
     float condMeasured1 = cond1->getValue();
     if (condMeasured1 != -9999)  // make sure all inputs are good
     {
@@ -195,18 +195,18 @@ const uint8_t conductivityVarResolution = 1;  // The number of digits after the 
 const char *conductivityVarName = "specificConductance";  // This must be a value from http://vocabulary.odm2.org/variablename/
 const char *conductivityVarUnit = "microsiemenPerCentimeter";  // This must be a value from http://vocabulary.odm2.org/units/
 const char *conductivityVarCode1 = "calibConductivity1";  // A short code for the variable
-const char *conductivityVarUUID1 = "12345678-abcd-1234-ef00-1234567890ab";
+const char *conductivityVarUUID1 = "39e2c734-2462-4015-9541-4d3d42cdfb03"; //Calibarted SC for CTD1
 
 // Create the calculated water pressure variable objects and return a variable pointer to it
 Variable *calibcond1 = new Variable(calibrateConductivity1, conductivityVarResolution,
                                         conductivityVarName, conductivityVarUnit,
                                         conductivityVarCode1, conductivityVarUUID1);
 
-float calibrateConductivity2(void)
+float calibrateConductivity2(void) //OPVL sensor
 {
     float calibConductivity2 = -9999;  // Always safest to start with a bad value
-    const float ConductivityK2 = 1.029586;   // slope from conductivity calibration spreadsheet
-    const float ConductivityB2 = -0.015092;   // intercept from conductivity calibration spreadsheet (mS/cm)
+    const float ConductivityK2 = 1.00412;   // slope from conductivity calibration spreadsheet
+    const float ConductivityB2 = 8.365;   // intercept from conductivity calibration spreadsheet (mS/cm)
     float condMeasured2 = cond2->getValue();
     if (condMeasured2 != -9999)  // make sure all inputs are good
     {
@@ -220,7 +220,7 @@ float calibrateConductivity2(void)
 // const char *conductivityVarName = "specificConductance";  // This must be a value from http://vocabulary.odm2.org/variablename/
 // const char *conductivityVarUnit = "microsiemenPerCentimeter";  // This must be a value from http://vocabulary.odm2.org/units/
 const char *conductivityVarCode2 = "calibConductivity2";  // A short code for the variable
-const char *conductivityVarUUID2 = "12345678-abcd-1234-ef00-1234567890ab";
+const char *conductivityVarUUID2 = "3d7cb05a-6505-4a84-b927-9277bef4ed51";
 
 // Create the calculated water pressure variable objects and return a variable pointer to it
 Variable *calibcond2 = new Variable(calibrateConductivity2, conductivityVarResolution,
