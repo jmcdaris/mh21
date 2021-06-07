@@ -169,6 +169,31 @@ Variable *cond2 = new DecagonCTD_Cond(&ctd_7, "cab179bc-0e05-4bae-a2db-0a9bd20fb
 /** End [hydros21] */
 
 // ==========================================================================
+//  Bosch BME280 Environmental Sensor
+// ==========================================================================
+/** Start [bme280] */
+#include <sensors/BoschBME280.h>
+
+const int8_t BME280Power = sensorPowerPin;  // Power pin (-1 if unconnected)
+uint8_t      BMEi2c_addr = 0x76;
+// The BME280 can be addressed either as 0x77 (Adafruit default) or 0x76 (Grove
+// default) Either can be physically mofidied for the other address
+
+// Create a Bosch BME280 sensor object
+BoschBME280 bme280(BME280Power, BMEi2c_addr);
+
+// Create four variable pointers for the BME280
+Variable* bme280Humid =
+    new BoschBME280_Humidity(&bme280, "12345678-abcd-1234-ef00-1234567890ab");
+Variable* bme280Temp =
+    new BoschBME280_Temp(&bme280, "12345678-abcd-1234-ef00-1234567890ab");
+Variable* bme280Press =
+    new BoschBME280_Pressure(&bme280, "12345678-abcd-1234-ef00-1234567890ab");
+Variable* bme280Alt =
+    new BoschBME280_Altitude(&bme280, "12345678-abcd-1234-ef00-1234567890ab");
+/** End [bme280] */
+
+// ==========================================================================
 //    Calculated Variables
 // ==========================================================================
 
