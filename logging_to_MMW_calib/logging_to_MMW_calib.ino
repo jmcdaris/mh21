@@ -141,29 +141,27 @@ MaximDS3231 ds3231(1);
 //  Meter Hydros 21 Conductivity, Temperature, and Depth Sensor
 // ==========================================================================
 /** Start [hydros21] */
-#include <sensors/DecagonCTD.h>
+#include <sensors/MeterHydros21.h>
 
-const char*   CTDSDI12address_1   = "1";    // The SDI-12 Address of the QWTA CTD
-const char*   CTDSDI12address_7   = "7";    // The SDI-12 Address of the OPVL CTD
-const uint8_t CTDNumberReadings = 6;      // The number of readings to average
-const int8_t  CTDPower = sensorPowerPin;  // Power pin (-1 if unconnected)
-const int8_t  CTDData_1  = 7;               // The SDI12 data pin
-const int8_t  CTDData_7  = 11;               // The SDI12 data pin
+const char*   hydros21SDI12address_1 = "1";  // The SDI-12 Address of the Hydros21
+const char*   hydros21SDI12address_7 = "7";  // The SDI-12 Address of the Hydros21
+const uint8_t hydros21NumberReadings = 6;  // The number of readings to average
+const int8_t  hydros21Power = sensorPowerPin;  // Power pin (-1 if unconnected)
+const int8_t  hydros21Data_1  = 7;               // The SDI12 data pin
+const int8_t  hydros21Data_7  = 11;               // The SDI12 data pin
 
-// const char*   CTDSDI12address   = "1";    // The SDI-12 Address of the CTD
-// const uint8_t CTDNumberReadings = 6;      // The number of readings to average
-// const int8_t  CTDPower = sensorPowerPin;  // Power pin (-1 if unconnected)
-// const int8_t  CTDData  = 7;               // The SDI12 data pin
 
-// Create a Decagon CTD sensor object
+// Create a Decagon CTD Hydros21 sensor object
 // DecagonCTD ctd(*CTDSDI12address, CTDPower, CTDData, CTDNumberReadings);
-DecagonCTD ctd_1(*CTDSDI12address_1, CTDPower, CTDData_1, CTDNumberReadings);
-DecagonCTD ctd_7(*CTDSDI12address_7, CTDPower, CTDData_7, CTDNumberReadings);
+MeterHydros21 hydros21_1(*hydros21SDI12address_1, hydros21Power, hydros21Data_1,
+                       hydros21NumberReadings);
+MeterHydros21 hydros21_7(*hydros21SDI12address_7, hydros21Power, hydros21Data_7,
+                      hydros21NumberReadings);
 
 // Create conductivity, temperature, and depth variable pointers for the CTD
 // Create calculated variable pointer
-Variable *cond1 = new DecagonCTD_Cond(&ctd_1,"8223ee2b-69dc-4b8d-ba0a-618a0c1be623");
-Variable *cond2 = new DecagonCTD_Cond(&ctd_7, "cab179bc-0e05-4bae-a2db-0a9bd20fb8e1");
+Variable *cond1 = new MeterHydros21_Cond(&hydros21_1,"8223ee2b-69dc-4b8d-ba0a-618a0c1be623");
+Variable *cond2 = new MeterHydros21_Cond(&hydros21_7, "cab179bc-0e05-4bae-a2db-0a9bd20fb8e1");
 
 
 /** End [hydros21] */
@@ -261,17 +259,18 @@ Variable *calibcond2 = new Variable(calibrateConductivity2, conductivityVarResol
 Variable* variableList[] = {
     new ProcessorStats_SampleNumber(&mcuBoard,
                                     "12345678-abcd-1234-ef00-1234567890ab"),
-    // new DecagonCTD_Depth(&ctd, "12345678-abcd-1234-ef00-1234567890ab"),
-    // new DecagonCTD_Temp(&ctd, "12345678-abcd-1234-ef00-1234567890ab"),
-    // new DecagonCTD_Cond(&ctd, "12345678-abcd-1234-ef00-1234567890ab"),
     cond1,
     calibcond1,
-    new DecagonCTD_Temp(&ctd_1, "2fdcdd5e-37c0-4520-ac7e-dcd00043e7e7"),
-    new DecagonCTD_Depth(&ctd_1, "2c01b840-3247-4503-a594-88cfd0780b8d"),
+    new MeterHydros21_Temp(&hydros21_1, "2fdcdd5e-37c0-4520-ac7e-dcd00043e7e7"),
+    new MeterHydros21_Depth(&hydros21_1, "2c01b840-3247-4503-a594-88cfd0780b8d"),
     cond2,
     calibcond2,
-    new DecagonCTD_Temp(&ctd_7, "9441ff2b-a5cd-4e02-9e55-6ee5d8248eec"),
-    new DecagonCTD_Depth(&ctd_7, "7d6b7963-decb-43c9-b098-21401e4ccae5"),
+    new MeterHydros21_Temp(&hydros21_7, "9441ff2b-a5cd-4e02-9e55-6ee5d8248eec"),
+    new MeterHydros21_Depth(&hydros21_7, "7d6b7963-decb-43c9-b098-21401e4ccae5"),
+    bme280Humid,
+    bme280Temp,
+    bme280Press,
+    bme280Alt,
     new ProcessorStats_Battery(&mcuBoard,
                                "12345678-abcd-1234-ef00-1234567890ab"),
     new MaximDS3231_Temp(&ds3231, "12345678-abcd-1234-ef00-1234567890ab"),
