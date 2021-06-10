@@ -186,7 +186,7 @@ Variable* bme280Humid =
 Variable* bme280Temp =
     new BoschBME280_Temp(&bme280, "12345678-abcd-1234-ef00-1234567890ab");
 Variable* bme280Press =
-    new BoschBME280_Pressure(&bme280, "12345678-abcd-1234-ef00-1234567890ab");
+    new BoschBME280_Pressure(&bme280, "41b78a83-c751-4864-bb22-95cbac480e54");
 Variable* bme280Alt =
     new BoschBME280_Altitude(&bme280, "12345678-abcd-1234-ef00-1234567890ab");
 /** End [bme280] */
