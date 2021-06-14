@@ -1,0 +1,170 @@
+---
+title: "Williamson Hall Wells"
+author: "John McDaris"
+date: "5/14/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+require(tidyverse)
+require(lubridate)
+require(magrittr)
+require(TSAUMN)
+require(multitaper)
+require(dygraphs)
+require(ggplot2)
+require(ggpubr)
+require(lubridate)
+require(anytime)
+require(imputeTS)
+require(zoo)
+require(tidyquant)
+```
+
+## Data Ingestion
+Grabs the current data file from the website and gets it into memory.  Then remove the first 39 rows of data to get to where the QWTA sensor starts getting real data.  Then change the date columns from character strings to dates.  (Note that OPVL sensor goes online 2 rows later.)
+
+
+```{r}
+Williamson_main <- read.csv("https://monitormywatershed.org/api/csv-values/?result_ids=4494,4495,4496,4497,4498,4499,4605,4606,4832", skip = 42, stringsAsFactors=FALSE) # main data file
+
+N <- 39
+Williamson_main <- tail(Williamson_main, -N)
+dates <- anytime(Williamson_main$DateTime, tz = "America/Chicago")
+Williamson_main$DateTime <- dates
+Williamson_main$Decagon_CTD.10_Depth.1 <- Williamson_main$Decagon_CTD.10_Depth.1 / 1000 # convert mm depth to m
+Williamson_main$Decagon_CTD.10_Depth.2 <- Williamson_main$Decagon_CTD.10_Depth.2 / 1000 # convert mm depth to m
+
+#dates <- anytime(Williamson_main$DateTimeUTC, tz = "America/Chicago")
+#Williamson_main$DateTimeUTC <- dates
+```
+
+
+## Fix Missing Data
+Generate index column and interpolate missing data values.
+
+```{r}
+#index column
+t <- Williamson_main$DateTime - Williamson_main$DateTime[1]
+t <- as.double(t)
+t <- t/300
+t <- t+1
+Williamson_main$Index <- t
+
+#new data file with NAs for missing data
+y <- nrow(Williamson_main)
+z <- Williamson_main$Index[y]
+
+t.new <- 1:z # new time variable with no gaps
+x.new <- rep( NA, z) #x variable, initially all NAs
+ind <- match (t, t.new) #indices of t.new that match values in t
+x.new[ind] <- Williamson_main$DateTime
+D <- tibble(Index = t.new, DateTime = x.new)
+Williamson_new <- D
+dates <- anytime(Williamson_new$DateTime, tz = "America/Chicago")
+Williamson_new$DateTime <- dates
+Williamson_new$QWTA.Cond.Raw[ind] <- Williamson_main$Decagon_CTD.10_Cond.1
+Williamson_new$QWTA.Cond.Cal[ind] <- Williamson_main$Decagon_CTD.10_Cond.3
+Williamson_new$QWTA.Depth.Raw[ind] <- Williamson_main$Decagon_CTD.10_Depth.1
+Williamson_new$QWTA.Temp[ind] <- Williamson_main$Decagon_CTD.10_Temp.1
+Williamson_new$OPVL.Cond.Raw[ind] <- Williamson_main$Decagon_CTD.10_Cond.2
+Williamson_new$OPVL.Cond.Cal[ind] <- Williamson_main$Decagon_CTD.10_Cond.4
+Williamson_new$OPVL.Depth.Raw[ind] <- Williamson_main$Decagon_CTD.10_Depth.2
+Williamson_new$OPVL.Temp[ind] <- Williamson_main$Decagon_CTD.10_Temp.2
+Williamson_new$Bar.Press[ind] <- Williamson_main$Bosch_BME280_Pressure
+
+#linear interpolation to generate values for missing data
+c.miss <- which(is.na(Williamson_new$DateTime))
+f <- na_interpolation(Williamson_new$QWTA.Cond.Raw, option = "linear")
+Williamson_new$QWTA.Cond.Raw <- f
+f <- na_interpolation(Williamson_new$QWTA.Cond.Cal, option = "linear")
+Williamson_new$QWTA.Cond.Cal <- f
+f <- na_interpolation(Williamson_new$QWTA.Depth.Raw, option = "linear")
+Williamson_new$QWTA.Depth.Raw <- f
+f <- na_interpolation(Williamson_new$QWTA.Temp, option = "linear")
+Williamson_new$QWTA.Temp <- f
+f <- na_interpolation(Williamson_new$OPVL.Cond.Raw, option = "linear")
+Williamson_new$OPVL.Cond.Raw <- f
+f <- na_interpolation(Williamson_new$OPVL.Cond.Cal, option = "linear")
+Williamson_new$OPVL.Cond.Cal <- f
+f <- na_interpolation(Williamson_new$OPVL.Depth.Raw, option = "linear")
+Williamson_new$OPVL.Depth.Raw <- f
+f <- na_interpolation(Williamson_new$OPVL.Temp, option = "linear")
+Williamson_new$OPVL.Temp <- f
+
+baro_na <- 1:8007
+Williamson_new$Bar.Press[baro_na] <- 0
+
+f <- na_interpolation(Williamson_new$Bar.Press, option = "linear")
+Williamson_new$Bar.Press <- f
+
+```
+## Unit Conversions 
+```{r}
+Williamson_new$QWTA.MASL <- 257 - 13.106 + Williamson_new$QWTA.Depth.Raw #depth to MASL - 257masl at wellhead, sensor at 13.106 m depth
+Williamson_new$OPVL.MASL <- 257 - 17.983 + Williamson_new$OPVL.Depth.Raw #depth to MASL - 257masl at wellhead, sensor at 17.983 m depth
+Williamson_new$Bar.Press <- Williamson_new$Bar.Press * 0.000102 #pascals to m H2O
+```
+
+
+
+## Well-head Barametric Pressure
+```{r}
+Williamson_baro <- tail(Williamson_new, -8007)
+ggplot(Williamson_baro, aes(x = DateTime, y = Bar.Press)) + geom_point() + geom_smooth(method = "loess", span = 0.05, method.args = list(degree=2), colour = "red") +xlab("Date")+ylab("Barometric Pressure - MASL")
+```
+```{r}
+ggplot(Williamson_baro, aes(x = Bar.Press, y = QWTA.MASL)) + geom_point() + 
+  geom_smooth(method='lm', formula= y~x, se = FALSE) + stat_regline_equation(label.y = 245.859, aes(label = ..eq.label..)) + stat_regline_equation(label.y = 245.858, aes(label = ..rr.label..)) + xlab("Barometric Pressure (m H2O)") + ylab("QWTA Water Level (MASL)")
+ggplot(Williamson_baro, aes(x = Bar.Press, y = OPVL.MASL)) + geom_point() + geom_smooth(method = 'lm', formula = y~x, se = FALSE) + stat_regline_equation(label.y = 241.335, aes(label = ..eq.label..)) + stat_regline_equation(label.y = 241.33, aes(label = ..rr.label..)) + xlab("Barometric Pressure (m H2O)") + ylab("OPVL Water Level (MASL)")
+```
+
+
+
+
+## QWTA Well Visualizations
+
+```{r}
+Williamson_QWTA <- Williamson_new[,c(1,2,3,4,5,6,11,12)] #select columns for QWTA well 668848
+
+ggplot(Williamson_QWTA, aes(x = DateTime, y = QWTA.Depth.Raw)) + geom_point() + geom_smooth(method = "loess", span = 0.05, method.args = list(degree=2), colour = "red")
+
+ggplot(Williamson_QWTA, aes(x = DateTime, y = QWTA.MASL)) + geom_point() + geom_smooth(method = "loess", span = 0.05, method.args = list(degree=2), colour = "red")
+
+QWTA_depth.mtm <- spec.mtm(Williamson_QWTA$QWTA.Depth.Raw, deltat = 1/288, dtUnits = "day", nw = 4, k = 8, plot = FALSE, Ftest = TRUE)
+gplot.mtm(QWTA_depth.mtm, period = TRUE, trans = "log10")
+gplot.mtm.ftest(QWTA_depth.mtm, uci = 0.99, period = TRUE)
+
+ggplot(Williamson_QWTA, aes(x = DateTime, y = QWTA.Cond.Cal)) + geom_point() + geom_smooth(method = "loess", span = 0.05, method.args = list(degree=2), colour = "red")
+
+QWTA_cond.mtm <- spec.mtm(Williamson_QWTA$QWTA.Cond.Cal, deltat = 1/288, dtUnits = "day", nw = 4, k = 8, plot = FALSE, Ftest = TRUE)
+gplot.mtm(QWTA_cond.mtm, period = TRUE, trans = "log10")
+gplot.mtm.ftest(QWTA_cond.mtm, uci = 0.99, period = TRUE)
+
+ggplot(Williamson_QWTA, aes(x = DateTime, y = QWTA.Temp)) + geom_point() + geom_smooth(method = "loess", span = 0.05, method.args = list(degree=2), colour = "red") + ylim(15, 16)
+```
+
+## OPVL Well Visualizations
+
+```{r}
+Williamson_OPVL <- Williamson_new[,c(1,2,7,8,9,10,11,13)] #select columns for OPVL well 668849
+Williamson_OPVL <- tail(Williamson_OPVL, -2) #remove the two extra rows of non-data for OPVL well
+
+ggplot(Williamson_OPVL, aes(x = DateTime, y = OPVL.Depth.Raw)) + geom_point() + geom_smooth(method = "loess", span = 0.01, method.args = list(degree=2), colour = "red") # water depth measurement
+
+ggplot(Williamson_OPVL, aes(x = DateTime, y = OPVL.Depth.Raw)) + geom_point() + geom_ma(ma_fun = SMA, n=50, linetype = 1, size = 1, color = "red") # water depth measurement
+
+OPVL_depth.mtm <- spec.mtm(Williamson_OPVL$OPVL.Depth.Raw, deltat = 1/288, dtUnits = "day", nw = 4, k = 8, plot = FALSE, Ftest = TRUE)
+gplot.mtm(OPVL_depth.mtm, period = TRUE, trans = "log10")
+gplot.mtm.ftest(OPVL_depth.mtm, uci = 0.99, period = TRUE)
+
+ggplot(Williamson_OPVL, aes(x = DateTime, y = OPVL.Cond.Cal)) + geom_point() + geom_smooth(method = "loess", span = 0.01, method.args = list(degree=2), colour = "red") # Calibrated Specific conductance measurement
+
+OPVL_cond.mtm <- spec.mtm(Williamson_OPVL$OPVL.Cond.Cal, deltat = 1/288, dtUnits = "day", nw = 4, k = 8, plot = FALSE, Ftest = TRUE)
+gplot.mtm(OPVL_cond.mtm, period = TRUE, trans = "log10")
+gplot.mtm.ftest(OPVL_cond.mtm, uci = 0.99, period = TRUE)
+
+ggplot(Williamson_OPVL, aes(x = DateTime, y = OPVL.Temp)) + geom_point() + geom_smooth(method = "loess", span = 0.05, method.args = list(degree=2), colour = "red") + ylim(13.5, 14.5)
+
+```
+
