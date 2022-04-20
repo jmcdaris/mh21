@@ -27,9 +27,7 @@
 #ifndef TINY_GSM_YIELD_MS
 #define TINY_GSM_YIELD_MS 2
 #endif
-#ifndef MQTT_MAX_PACKET_SIZE
-#define MQTT_MAX_PACKET_SIZE 240
-#endif
+
 /** End [defines] */
 
 // ==========================================================================
@@ -43,9 +41,8 @@
 // interrupts and must be explicitly included in the main program.
 #include <EnableInterrupt.h>
 
-// To get all of the base classes for ModularSensors, include LoggerBase.
-// NOTE:  Individual sensor definitions must be included separately.
-#include <LoggerBase.h>
+// Include the main header for ModularSensors
+#include <ModularSensors.h>
 /** End [includes] */
 
 // ==========================================================================
@@ -112,7 +109,7 @@ const int8_t sensorPowerPin = 22;  // MCU pin controlling main sensor power
 // ==========================================================================
 //  Wifi/Cellular Modem Options
 // ==========================================================================
-/** Start [xbee_cell_transparent] */
+/** Start [digi_xbee_cellular_transparent] */
 // For any Digi Cellular XBee's
 // NOTE:  The u-blox based Digi XBee's (3G global and LTE-M global) can be used
 // in either bypass or transparent mode, each with pros and cons
@@ -143,7 +140,7 @@ DigiXBeeCellularTransparent modemXBCT(&modemSerial, modemVccPin, modemStatusPin,
                                       modemSleepRqPin, apn);
 // Create an extra reference to the modem by a generic name
 DigiXBeeCellularTransparent modem = modemXBCT;
-/** End [xbee_cell_transparent] */
+/** End [digi_xbee_cellular_transparent] */
 
 
 // ==========================================================================
@@ -231,13 +228,13 @@ Variable *y520Temp = new YosemitechY520_Temp(&y520, "9441ff2b-a5cd-4e02-9e55-6ee
 /** Start [bme280] */
 #include <sensors/BoschBME280.h>
 
-const int8_t BME280Power = sensorPowerPin;  // Power pin (-1 if unconnected)
+const int8_t I2CPower    = sensorPowerPin;  // Power pin (-1 if unconnected)
 uint8_t      BMEi2c_addr = 0x76;
 // The BME280 can be addressed either as 0x77 (Adafruit default) or 0x76 (Grove
 // default) Either can be physically mofidied for the other address
 
 // Create a Bosch BME280 sensor object
-BoschBME280 bme280(BME280Power, BMEi2c_addr);
+BoschBME280 bme280(I2CPower, BMEi2c_addr);
 
 // Create four variable pointers for the BME280
 Variable* bme280Humid =
