@@ -71,3 +71,61 @@ _______
 [//]: # ( @include{lineno} logging_to_MMW/platformio.ini )
 
 [//]: # ( @section example_mmw_code The Complete Code )
+
+
+
+
+Here's what the .ini file should look like:
+; PlatformIO Project Configuration File
+;
+;   Build options: build flags, source filter
+;   Upload options: custom upload port, speed and extra flags
+;   Library options: dependencies, extra library storages
+;   Advanced options: extra scripting
+;
+; Please visit documentation for the other options and examples
+; http://docs.platformio.org/page/projectconf.html
+
+[platformio]
+;src_dir = logging_to_MMW_calib
+src_dir = logging_to_MMW_calib_MeterYosi
+
+[env:mayfly]
+monitor_speed = 115200
+board = mayfly
+platform = atmelavr
+framework = arduino
+lib_ldf_mode = deep+
+lib_ignore =
+    RTCZero
+    Adafruit NeoPixel
+    Adafruit GFX Library
+    Adafruit SSD1306
+    Adafruit ADXL343
+    Adafruit STMPE610
+    Adafruit TouchScreen
+    Adafruit ILI9341
+build_flags =
+    -DSDI12_EXTERNAL_PCINT
+    -DNEOSWSERIAL_EXTERNAL_PCINT
+    -DMQTT_MAX_PACKET_SIZE=240
+    -DTINY_GSM_RX_BUFFER=64
+    -DTINY_GSM_YIELD_MS=2
+    -DENABLE_SERIAL2
+    -DENABLE_SERIAL3
+    ; -D MS_BUILD_TEST_XBEE_CELLULAR  ; Turn on first time w/ a Digi LTE-M module
+    ; -D MS_LOGGERBASE_DEBUG
+    ; -D MS_DATAPUBLISHERBASE_DEBUG
+    ; -D MS_ENVIRODIYPUBLISHER_DEBUG
+lib_deps =
+    envirodiy/EnviroDIY_ModularSensors@=0.32.2
+;  ^^ Use this when working from a tagged release of the library
+;     See tags at https://platformio.org/lib/show/1648/EnviroDIY_ModularSensors
+
+;    https://github.com/EnviroDIY/ModularSensors.git#develop
+;  ^^ Use this when if you want to pull from the develop branch
+
+    https://github.com/PaulStoffregen/AltSoftSerial.git
+    ; https://github.com/SRGDamia1/NeoSWSerial.git
+    https://github.com/EnviroDIY/SoftwareSerial_ExternalInts.git
+;  ^^ These are software serial port emulator libraries, you may not need them
