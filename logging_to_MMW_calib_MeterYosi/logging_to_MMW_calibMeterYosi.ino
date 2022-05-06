@@ -86,7 +86,7 @@ const char* sketchName = "logging_to_MMW_calib.ino";
 // Logger ID, also becomes the prefix for the name of the data file on SD card
 const char* LoggerID = "20351";
 // How frequently (in minutes) to log data
-const uint8_t loggingInterval = 5;
+const uint8_t loggingInterval = 2;
 // Your logger's timezone.
 const int8_t timeZone = -6;  // Central Standard Time
 // NOTE:  Daylight savings time will not be applied!  Please use standard time!
@@ -403,18 +403,13 @@ float getBatteryVoltage() {
 // ==========================================================================
 /** Start [setup] */
 void setup() {
-// Wait for USB connection to be established by PC
-// NOTE:  Only use this when debugging - if not connected to a PC, this
-// could prevent the script from starting
-#if defined SERIAL_PORT_USBVIRTUAL
-    while (!SERIAL_PORT_USBVIRTUAL && (millis() < 10000)) {}
-#endif
 
+     /** Start [setup_prints] */
     // Start the primary serial connection
     Serial.begin(serialBaud);
 
     // Print a start-up note to the first serial port
-    Serial.print(F("Now running "));
+    Serial.print(F("\n\nNow running "));
     Serial.print(sketchName);
     Serial.print(F(" on Logger "));
     Serial.println(LoggerID);
@@ -425,15 +420,18 @@ void setup() {
     Serial.print(F("TinyGSM Library version "));
     Serial.println(TINYGSM_VERSION);
     Serial.println();
+    /** End [setup_prints] */
 
-// Allow interrupts for software serial
-#if defined SoftwareSerial_ExtInts_h
-    enableInterrupt(softSerialRx, SoftwareSerial_ExtInts::handle_interrupt,
-                    CHANGE);
-#endif
-#if defined NeoSWSerial_h
-    enableInterrupt(neoSSerial1Rx, neoSSerial1ISR, CHANGE);
-#endif
+    /** Start [setup_softserial] */
+    // Allow interrupts for software serial
+    #if defined SoftwareSerial_ExtInts_h
+        enableInterrupt(softSerialRx, SoftwareSerial_ExtInts::handle_interrupt,
+                        CHANGE);
+    #endif
+    #if defined NeoSWSerial_h
+        enableInterrupt(neoSSerial1Rx, neoSSerial1ISR, CHANGE);
+    #endif
+    /** End [setup_softserial] */
 
     // Start the serial connection with the modem
     modemSerial.begin(modemBaud);
@@ -472,6 +470,53 @@ void setup() {
         varArray.setupSensors();
     }
 
+    #if defined BUILD_MODEM_XBEE_CELLULAR
+        /** Start [setup_xbeec_carrier] */
+        // Extra modem set-up
+        Serial.println(F("Waking modem and setting Cellular Carrier Options..."));
+        modem.modemWake();  // NOTE:  This will also set up the modem
+        // Go back to command mode to set carrier options
+        for (uint8_t i = 0; i < 5; i++) {
+            // Wait the required guard time before entering command mode
+            delay(1010);
+            modem.gsmModem.streamWrite(GF("+++"));  // enter command mode
+            if (modem.gsmModem.waitResponse(2000, GF("OK\r")) == 1) break;
+        }
+        // Carrier Profile - 0 = Automatic selection
+        //                 - 1 = No profile/SIM ICCID selected
+        //                 - 2 = AT&T
+        //                 - 3 = Verizon
+        // NOTE:  To select T-Mobile, you must enter bypass mode!
+        modem.gsmModem.sendAT(GF("CP"), 0);  // Auto select in rural locations
+        modem.gsmModem.waitResponse(GF("OK\r"));
+        // Cellular network technology - 0 = LTE-M with NB-IoT fallback
+        //                             - 1 = NB-IoT with LTE-M fallback
+        //                             - 2 = LTE-M only
+        //                             - 3 = NB-IoT only
+        // NOTE:  As of 2020 in the USA, AT&T and Verizon only use LTE-M
+        // T-Mobile uses NB-IOT
+        modem.gsmModem.sendAT(GF("N#"), 2);
+        modem.gsmModem.waitResponse();
+        // Write changes to flash and apply them
+        Serial.println(F("Wait while applying changes..."));
+        // Write changes to flash
+        modem.gsmModem.sendAT(GF("WR"));
+        modem.gsmModem.waitResponse(GF("OK\r"));
+        // Apply changes
+        modem.gsmModem.sendAT(GF("AC"));
+        modem.gsmModem.waitResponse(GF("OK\r"));
+        // Reset the cellular component to ensure network settings are changed
+        modem.gsmModem.sendAT(GF("!R"));
+        modem.gsmModem.waitResponse(30000L, GF("OK\r"));
+        // Force reset of the Digi component as well
+        // This effectively exits command mode
+        modem.gsmModem.sendAT(GF("FR"));
+        modem.gsmModem.waitResponse(5000L, GF("OK\r"));
+        /** End [setup_xbeec_carrier] */
+    #endif
+
+
+    /** Start [setup_clock] */
     // Sync the clock if it isn't valid or we have battery to spare
     if (getBatteryVoltage() > 3.55 || !dataLogger.isRTCSane()) {
         // Synchronize the RTC with NIST
@@ -486,13 +531,13 @@ void setup() {
     // the sensor setup we'll skip this too.
     if (getBatteryVoltage() > 3.4) {
         Serial.println(F("Setting up file on SD card"));
-        dataLogger.turnOnSDcard(
-            true);  // true = wait for card to settle after power up
+        dataLogger.turnOnSDcard(true);
+            // true = wait for card to settle after power up
         dataLogger.createLogFile(true);  // true = write a new header
-        dataLogger.turnOffSDcard(
-            true);  // true = wait for internal housekeeping after write
+        dataLogger.turnOffSDcard(true);
+            // true = wait for internal housekeeping after write
     }
-
+    /** End [setup_file] */
     // Call the processor sleep
     Serial.println(F("Putting processor to sleep\n"));
     dataLogger.systemSleep();
