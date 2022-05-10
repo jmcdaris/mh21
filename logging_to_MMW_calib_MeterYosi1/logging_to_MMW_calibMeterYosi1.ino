@@ -1,6 +1,6 @@
 /** =========================================================================
  * @file logging_to_MMW.ino
- * @brief From ModularSensors examples DRWI_LTE.ino + menu_a_la_carte.ino
+ * @brief Example logging data and publishing to Monitor My Watershed.
  *
  * @author Sara Geleskie Damiano <sdamiano@stroudcenter.org>
  * @copyright (c) 2017-2020 Stroud Water Research Center (SWRC)
@@ -9,7 +9,6 @@
  *
  * Build Environment: Visual Studios Code with PlatformIO
  * Hardware Platform: EnviroDIY Mayfly Arduino Datalogger
- * Software System: EnviroDIY_ModularSensors@=0.32.2
  *
  * DISCLAIMER:
  * THIS CODE IS PROVIDED "AS IS" - NO WARRANTY IS GIVEN.
@@ -46,7 +45,6 @@
 #include <ModularSensors.h>
 /** End [includes] */
 
-
 // ==========================================================================
 //  Creating Additional Serial Ports
 // ==========================================================================
@@ -71,17 +69,6 @@ AltSoftSerial altSoftSerial;
 //  Assigning Serial Port Functionality
 // ==========================================================================
 
-/** Start [assign_ports_hw] */
-// If there are additional hardware Serial ports possible - use them!
-
-// We give the modem first priority and assign it to hardware serial
-// All of the supported processors have a hardware port available named Serial1
-#define modemSerial Serial1
-
-/** End [assign_ports_hw] */
-
-/** Start [assign_ports_sw] */
-
 // Define the serial port for modbus
 // Modbus (at 9600 8N1) is used by the Keller level loggers and Yosemitech
 // sensors
@@ -99,9 +86,9 @@ const char* sketchName = "logging_to_MMW_calib.ino";
 // Logger ID, also becomes the prefix for the name of the data file on SD card
 const char* LoggerID = "20351";
 // How frequently (in minutes) to log data
-const uint8_t loggingInterval = 30;
+const uint8_t loggingInterval = 2;
 // Your logger's timezone.
-const int8_t timeZone = -6;  // Central Standard Time (CST=-6)
+const int8_t timeZone = -6;  // Central Standard Time
 // NOTE:  Daylight savings time will not be applied!  Please use standard time!
 
 // Set the input and output pins for the logger
@@ -110,8 +97,7 @@ const int32_t serialBaud = 115200;  // Baud rate for debugging
 const int8_t  greenLED   = 8;       // Pin for the green LED
 const int8_t  redLED     = 9;       // Pin for the red LED
 const int8_t  buttonPin  = 21;      // Pin for debugging mode (ie, button pin)
-const int8_t  wakePin    = A7;  // MCU interrupt/alarm pin to wake from sleep
-// Mayfly 0.x
+const int8_t  wakePin    = 31;  // MCU interrupt/alarm pin to wake from sleep
 // Set the wake pin to -1 if you do not want the main processor to sleep.
 // In a SAMD system where you are using the built-in rtc, set wakePin to 1
 const int8_t sdCardPwrPin   = -1;  // MCU SD card power pin
@@ -123,43 +109,38 @@ const int8_t sensorPowerPin = 22;  // MCU pin controlling main sensor power
 // ==========================================================================
 //  Wifi/Cellular Modem Options
 // ==========================================================================
-/** Start [xbee_cell_transparent] */
+/** Start [digi_xbee_cellular_transparent] */
 // For any Digi Cellular XBee's
 // NOTE:  The u-blox based Digi XBee's (3G global and LTE-M global) can be used
 // in either bypass or transparent mode, each with pros and cons
 // The Telit based Digi XBees (LTE Cat1) can only use this mode.
 #include <modems/DigiXBeeCellularTransparent.h>
 
-// NOTE: Extra hardware and software serial ports are created in the "Settings
-// for Additional Serial Ports" section
-const int32_t modemBaud = 9600;  // All XBee's use 9600 by default
+// Create a reference to the serial port for the modem
+HardwareSerial& modemSerial = Serial1;  // Use hardware serial if possible
+const int32_t   modemBaud   = 9600;     // All XBee's use 9600 by default
 
 // Modem Pins - Describe the physical pin connection of your modem to your board
 // NOTE:  Use -1 for pins that do not apply
-// The pin numbers here are for a Digi XBee with a Mayfly and LTE adapter
-// For options https://github.com/EnviroDIY/LTEbee-Adapter/edit/master/README.md
-const int8_t modemVccPin = -1;     // MCU pin controlling modem power
-                                   // Option: modemVccPin = A5, if Mayfly SJ7 is
-                                   // connected to the ASSOC pin
-const int8_t modemStatusPin = 19;  // MCU pin used to read modem status
-// NOTE:  If possible, use the `STATUS/SLEEP_not` (XBee pin 13) for status, but
-// the CTS pin can also be used if necessary
-const bool   useCTSforStatus = false;  // Flag to use the CTS pin for status
-const int8_t modemResetPin   = 20;     // MCU pin connected to modem reset pin
-const int8_t modemSleepRqPin = 23;     // MCU pin for modem sleep/wake request
-const int8_t modemLEDPin = redLED;     // MCU pin connected an LED to show modem
-                                       // status
+const int8_t modemVccPin    = -2;     // MCU pin controlling modem power
+const int8_t modemStatusPin = 19;     // MCU pin used to read modem status
+const bool useCTSforStatus  = false;  // Flag to use the XBee CTS pin for status
+const int8_t modemResetPin  = 20;     // MCU pin connected to modem reset pin
+const int8_t modemSleepRqPin = 23;    // MCU pin for modem sleep/wake request
+const int8_t modemLEDPin = redLED;    // MCU pin connected an LED to show modem
+                                      // status (-1 if unconnected)
 
 // Network connection information
-const char* apn = "hologram";  // APN for GPRS connection
+const char* apn = "hologram";  // The APN for the gprs connection
 
-// Create the modem object
+// NOTE:  If possible, use the `STATUS/SLEEP_not` (XBee pin 13) for status, but
+// the `CTS` pin can also be used if necessary
 DigiXBeeCellularTransparent modemXBCT(&modemSerial, modemVccPin, modemStatusPin,
                                       useCTSforStatus, modemResetPin,
                                       modemSleepRqPin, apn);
 // Create an extra reference to the modem by a generic name
 DigiXBeeCellularTransparent modem = modemXBCT;
-/** End [xbee_cell_transparent] */
+/** End [digi_xbee_cellular_transparent] */
 
 
 // ==========================================================================
@@ -169,7 +150,7 @@ DigiXBeeCellularTransparent modem = modemXBCT;
 #include <sensors/ProcessorStats.h>
 
 // Create the main processor chip "sensor" - for general metadata
-const char*    mcuBoardVersion = "v0.5b";
+const char*    mcuBoardVersion = "v1.1";
 ProcessorStats mcuBoard(mcuBoardVersion);
 /** End [processor_sensor] */
 
@@ -225,7 +206,7 @@ Variable *cond1 = new MeterHydros21_Cond(&hydros21_1,"8223ee2b-69dc-4b8d-ba0a-61
 byte         y520ModbusAddress = 0x01;  // The modbus address of the Y520
 const int8_t y520AdapterPower  = sensorPowerPin;  // RS485 adapter power pin
                                                   // (-1 if unconnected)
-const int8_t  y520SensorPower = sensorPowerPin;               // Sensor power pin
+const int8_t  y520SensorPower = A3;               // Sensor power pin
 const int8_t  y520EnablePin   = -1;  // Adapter RE/DE pin (-1 if not applicable)
 const uint8_t y520NumberReadings = 5;
 // The manufacturer recommends averaging 10 readings, but we take 5 to minimize
@@ -408,7 +389,7 @@ void greenredflash(uint8_t numFlash = 4, uint8_t rate = 75) {
     digitalWrite(redLED, LOW);
 }
 
-// Uses the processor sensor object to read the battery voltage
+// Reads the battery voltage
 // NOTE: This will actually return the battery level from the previous update!
 float getBatteryVoltage() {
     if (mcuBoard.sensorValues[0] == -9999) mcuBoard.update();
@@ -452,16 +433,13 @@ void setup() {
     #endif
     /** End [setup_softserial] */
 
-    /** Start [setup_serial_begins] */
     // Start the serial connection with the modem
     modemSerial.begin(modemBaud);
 
     // Start the stream for the modbus sensors;
     // all currently supported modbus sensors use 9600 baud
     modbusSerial.begin(9600);
-    /** End [setup_serial_begins] */
 
-    /** Start [setup_flashing_led] */
     // Set up pins for the LED's
     pinMode(greenLED, OUTPUT);
     digitalWrite(greenLED, LOW);
@@ -469,9 +447,7 @@ void setup() {
     digitalWrite(redLED, LOW);
     // Blink the LEDs to show the board is on and starting up
     greenredflash();
-    /** End [setup_flashing_led] */
 
-    /** Start [setup_logger] */
     // Set the timezones for the logger/data and the RTC
     // Logging in the given time zone
     Logger::setLoggerTimeZone(timeZone);
@@ -486,16 +462,13 @@ void setup() {
 
     // Begin the logger
     dataLogger.begin();
-    /** End [setup_logger] */
 
-    /** Start [setup_sesors] */
     // Note:  Please change these battery voltages to match your battery
     // Set up the sensors, except at lowest battery level
     if (getBatteryVoltage() > 3.4) {
         Serial.println(F("Setting up sensors..."));
         varArray.setupSensors();
     }
-    /** End [setup_sesors] */
 
     #if defined BUILD_MODEM_XBEE_CELLULAR
         /** Start [setup_xbeec_carrier] */
@@ -550,9 +523,7 @@ void setup() {
         // This will also set up the modem
         dataLogger.syncRTC();
     }
-    /** End [setup_clock] */
 
-    /** Start [setup_file] */
     // Create the log file, adding the default header to it
     // Do this last so we have the best chance of getting the time correct and
     // all sensor names correct
@@ -567,12 +538,9 @@ void setup() {
             // true = wait for internal housekeeping after write
     }
     /** End [setup_file] */
-
-    /** Start [setup_sleep] */
     // Call the processor sleep
     Serial.println(F("Putting processor to sleep\n"));
     dataLogger.systemSleep();
-    /** End [setup_sleep] */
 }
 /** End [setup] */
 
@@ -580,7 +548,6 @@ void setup() {
 // ==========================================================================
 //  Arduino Loop Function
 // ==========================================================================
-
 /** Start [complex_loop] */
 // Use this long loop when you want to do something special
 // Because of the way alarms work on the RTC, it will wake the processor and
